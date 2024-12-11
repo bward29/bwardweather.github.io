@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benjamin's Weather Dashboard</title>
+    <!-- Add favicon -->
+    <link rel="icon"
+        href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌤️</text></svg>"
+        type="image/svg+xml">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Benjamin's Weather Dashboard</h1>
+        </div>
+
+        <div class="search-container">
+            <div class="search-bar">
+                <input type="text" id="cityInput" placeholder="Enter city name" autocomplete="off">
+                <button id="searchButton">Search</button>
+            </div>
+            <div id="searchResults" class="search-results"></div>
+            <div id="pinnedCities" class="pinned-cities"></div>
+        </div>
+
+        <div class="loading" id="loading">Loading...</div>
+
+        <div class="grid">
+            <div class="card" id="currentWeather">
+                <h2>Current Weather</h2>
+                <div id="currentWeatherContent"></div>
+            </div>
+
+            <div class="card">
+                <h2>5-Day Forecast</h2>
+                <div id="forecast"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Weather Map</h2>
+            <div class="map-controls">
+                <label for="mapLayer">Select Map Type:</label>
+                <select id="mapLayer" name="mapLayer" title="Weather map layer selector">
+                    <option value="temp_new">Temperature</option>
+                    <option value="precipitation_new">Precipitation</option>
+                    <option value="clouds_new">Clouds</option>
+                    <option value="wind_new">Wind Speed</option>
+                </select>
+            </div>
+            <div id="map"></div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script src="cities.js"></script>
+    <script src="weather.js"></script>
+</body>
+
+</html>

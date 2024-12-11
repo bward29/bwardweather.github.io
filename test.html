@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather API Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .error {
+            color: red;
+        }
+
+        .success {
+            color: green;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Weather API Test</h1>
+    <button onclick="testAPI()">Test API Connection</button>
+    <div id="result" class="result"></div>
+
+    <script>
+        const API_KEY = '1c15c396ffc8b3212590c5e401712e45';
+        const TEST_CITY = 'London';
+
+        async function testAPI() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing API connection...';
+
+            try {
+                // Test current weather endpoint
+                const weatherURL = `https://api.openweathermap.org/data/2.5/weather?q=${TEST_CITY}&appid=${API_KEY}&units=imperial`;
+                console.log('Testing URL:', weatherURL);
+
+                const response = await fetch(weatherURL);
+                const data = await response.json();
+
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ API Test Successful!</h3>
+                            <p>Successfully retrieved weather data for ${data.name}</p>
+                            <p>Temperature: ${Math.round(data.main.temp)}°F</p>
+                            <p>Weather: ${data.weather[0].description}</p>
+                            <pre>Status: ${response.status}</pre>
+                            <hr>
+                            <p><strong>Full Response:</strong></p>
+                            <pre>${JSON.stringify(data, null, 2)}</pre>
+                        </div>
+                    `;
+                } else {
+                    throw new Error(`API Error: ${data.message}`);
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ API Test Failed</h3>
+                        <p>Error: ${error.message}</p>
+                        <p>Please check:</p>
+                        <ul>
+                            <li>API Key is correct</li>
+                            <li>Internet connection is working</li>
+                            <li>No ad blockers or security software are blocking the request</li>
+                        </ul>
+                    </div>
+                `;
+                console.error('API Test Error:', error);
+            }
+        }
+    </script>
+</body>
+
+</html>
