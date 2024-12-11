@@ -3,6 +3,5 @@ const CONFIG = {
     BASE_URL: 'https://api.openweathermap.org/data/2.5',
     ICON_URL: 'https://openweathermap.org/img/wn',
     MAP_URL: 'https://tile.openweathermap.org/map',
-    DEFAULT_CITY: 'London',
     UNITS: 'imperial'
 };

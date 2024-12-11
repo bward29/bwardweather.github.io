@@ -1,7 +1,7 @@
 const CITIES = {
     searchCities: async (searchText) => {
         try {
-            // Get coordinates and state info
+            // Get coordinates and state info using geocoding API
             const geoResponse = await fetch(
                 `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(searchText)}&limit=10&appid=${CONFIG.API_KEY}`
             );
@@ -20,8 +20,10 @@ const CITIES = {
                     return {
                         ...weatherData,
                         geoData: location,
-                        state: location.state || '',
-                        country: location.country
+                        coord: {
+                            lat: location.lat,
+                            lon: location.lon
+                        }
                     };
                 })
             );

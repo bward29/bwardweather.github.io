@@ -2,6 +2,7 @@ let searchTimeout = null;
 let lastKnownCoordinates = { lat: null, lon: null };
 let pinnedCities = [];
 const MAX_PINNED_CITIES = 3;
+let map = null;
 
 function getLastKnownCoordinates() {
     return lastKnownCoordinates;
@@ -223,48 +224,98 @@ function displayForecast(data) {
     const forecastDiv = document.getElementById('forecast');
     forecastDiv.innerHTML = '';
 
-    for (let i = 0; i < data.list.length; i += 8) {
-        const forecast = data.list[i];
+    // Group forecast data by day
+    const dailyForecasts = {};
+
+    data.list.forEach(forecast => {
         const date = new Date(forecast.dt * 1000);
-        const temp = Math.round(forecast.main.temp);
-        const weatherIcon = forecast.weather[0].icon;
+        const dateKey = date.toLocaleDateString();
+
+        if (!dailyForecasts[dateKey]) {
+            dailyForecasts[dateKey] = {
+                date: date,
+                description: forecast.weather[0].description,
+                icon: forecast.weather[0].icon,
+                temps: [],
+                high: -Infinity,
+                low: Infinity
+            };
+        }
+
+        dailyForecasts[dateKey].temps.push(forecast.main.temp);
+        dailyForecasts[dateKey].high = Math.max(dailyForecasts[dateKey].high, forecast.main.temp);
+        dailyForecasts[dateKey].low = Math.min(dailyForecasts[dateKey].low, forecast.main.temp);
+    });
+
+    // Display each day's forecast
+    Object.values(dailyForecasts).slice(0, 5).forEach(forecast => {
+        const highTemp = Math.round(forecast.high);
+        const lowTemp = Math.round(forecast.low);
 
         forecastDiv.innerHTML += `
             <div class="forecast-item">
                 <div>
-                    <h3>${date.toLocaleDateString()}</h3>
-                    <p>${forecast.weather[0].description}</p>
-                    <p>Temperature: ${temp}°F</p>
+                    <h3>${forecast.date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</h3>
+                    <p>${forecast.description}</p>
+                    <div class="temperature-range">
+                        <span class="high-temp">H: ${highTemp}°F</span>
+                        <span class="low-temp">L: ${lowTemp}°F</span>
+                    </div>
                 </div>
-                <img class="weather-icon" src="${CONFIG.ICON_URL}/${weatherIcon}@2x.png" 
-                     alt="Weather icon showing ${forecast.weather[0].description}">
+                <img class="weather-icon" src="${CONFIG.ICON_URL}/${forecast.icon}@2x.png" 
+                     alt="Weather icon showing ${forecast.description}">
             </div>
         `;
-    }
+    });
 }
 
 function updateMap(lat, lon) {
     if (!lat || !lon) return;
 
-    const zoom = 8;
     const layer = document.getElementById('mapLayer').value;
-    const mapUrl = `${CONFIG.MAP_URL}/${layer}/${zoom}/${lat}/${lon}.png?appid=${CONFIG.API_KEY}`;
+    const mapContainer = document.getElementById('map');
 
-    document.getElementById('map').innerHTML = `
-        <img src="${mapUrl}" 
-             alt="Weather map showing ${layer.replace('_new', '')} data" 
-             style="width: 100%; height: 100%; object-fit: cover;"
-             onerror="handleMapError(this)">
-    `;
-}
+    // Convert coordinates
+    const position = ol.proj.fromLonLat([lon, lat]);
 
-function handleMapError(imgElement) {
-    imgElement.parentElement.innerHTML = `
-        <div style="padding: 20px; text-align: center;">
-            <p>Weather map will be available when the API key is activated</p>
-            <p>(Usually takes up to 2 hours after key creation)</p>
-        </div>
-    `;
+    // If map doesn't exist, create it
+    if (!map) {
+        map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM()
+                })
+            ],
+            view: new ol.View({
+                center: position,
+                zoom: 8
+            })
+        });
+    }
+
+    // Add weather layer
+    const weatherLayer = new ol.layer.Tile({
+        source: new ol.source.XYZ({
+            url: `https://tile.openweathermap.org/map/${layer}/{z}/{x}/{y}.png?appid=${CONFIG.API_KEY}`,
+            crossOrigin: 'anonymous'
+        })
+    });
+
+    // Remove any existing weather layers
+    map.getLayers().getArray()
+        .filter(layer => layer.get('name') === 'weather')
+        .forEach(layer => map.removeLayer(layer));
+
+    // Add the new weather layer
+    weatherLayer.set('name', 'weather');
+    map.addLayer(weatherLayer);
+
+    // Center map on selected location
+    map.getView().animate({
+        center: position,
+        duration: 1000
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
