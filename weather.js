@@ -4,6 +4,15 @@ let pinnedCities = [];
 const MAX_PINNED_CITIES = 3;
 let map = null;
 
+function handleSafariError(error) {
+    console.error('Safari specific error:', error);
+    if (error.message.includes('Failed to fetch')) {
+        alert('Please try refreshing the page or check your internet connection.');
+        return error;
+    }
+    return error;
+}
+
 function getLastKnownCoordinates() {
     return lastKnownCoordinates;
 }
@@ -132,9 +141,9 @@ async function getWeatherByCoords(lat, lon) {
 
     try {
         const [currentWeatherResponse, forecastResponse, geoResponse] = await Promise.all([
-            fetch(`${CONFIG.BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${CONFIG.API_KEY}&units=${CONFIG.UNITS}`),
-            fetch(`${CONFIG.BASE_URL}/forecast?lat=${lat}&lon=${lon}&appid=${CONFIG.API_KEY}&units=${CONFIG.UNITS}`),
-            fetch(`${CONFIG.GEO_URL}/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${CONFIG.API_KEY}`)
+            fetch(`${CONFIG.BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${CONFIG.API_KEY}&units=${CONFIG.UNITS}`, CONFIG.FETCH_OPTIONS),
+            fetch(`${CONFIG.BASE_URL}/forecast?lat=${lat}&lon=${lon}&appid=${CONFIG.API_KEY}&units=${CONFIG.UNITS}`, CONFIG.FETCH_OPTIONS),
+            fetch(`${CONFIG.GEO_URL}/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${CONFIG.API_KEY}`, CONFIG.FETCH_OPTIONS)
         ]);
 
         if (!currentWeatherResponse.ok || !forecastResponse.ok || !geoResponse.ok) {
@@ -153,6 +162,9 @@ async function getWeatherByCoords(lat, lon) {
         updateMap(lat, lon);
         setLastKnownCoordinates(lat, lon);
     } catch (error) {
+        if (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')) {
+            error = await handleSafariError(error);
+        }
         console.error('Error:', error);
         alert('Error fetching weather data. Please try again.');
     } finally {
@@ -171,7 +183,8 @@ async function getWeather() {
 
     try {
         const geoResponse = await fetch(
-            `${CONFIG.GEO_URL}/direct?q=${encodeURIComponent(cityInput)}&limit=1&appid=${CONFIG.API_KEY}`
+            `${CONFIG.GEO_URL}/direct?q=${encodeURIComponent(cityInput)}&limit=1&appid=${CONFIG.API_KEY}`,
+            CONFIG.FETCH_OPTIONS
         );
 
         if (!geoResponse.ok) {
@@ -187,6 +200,9 @@ async function getWeather() {
         getWeatherByCoords(location.lat, location.lon);
 
     } catch (error) {
+        if (navigator.userAgent.includes('Safari') && !navigator.userAgent.includes('Chrome')) {
+            error = await handleSafariError(error);
+        }
         console.error('Error:', error);
         alert('Error fetching weather data. Please try again.');
     } finally {
@@ -278,13 +294,15 @@ function updateMap(lat, lon) {
     // Convert coordinates
     const position = ol.proj.fromLonLat([lon, lat]);
 
-    // If map doesn't exist, create it
+    // If map doesn't exist, create it with specific attributions and crossOrigin settings
     if (!map) {
         map = new ol.Map({
             target: 'map',
             layers: [
                 new ol.layer.Tile({
-                    source: new ol.source.OSM()
+                    source: new ol.source.OSM({
+                        crossOrigin: null
+                    })
                 })
             ],
             view: new ol.View({
@@ -294,24 +312,26 @@ function updateMap(lat, lon) {
         });
     }
 
-    // Add weather layer
+    // Add weather layer with Safari-friendly settings
     const weatherLayer = new ol.layer.Tile({
         source: new ol.source.XYZ({
             url: `https://tile.openweathermap.org/map/${layer}/{z}/{x}/{y}.png?appid=${CONFIG.API_KEY}`,
-            crossOrigin: 'anonymous'
-        })
+            crossOrigin: 'anonymous',
+            attributions: ['Weather data © OpenWeatherMap']
+        }),
+        opacity: 0.7
     });
 
-    // Remove any existing weather layers
+    // Remove existing weather layers
     map.getLayers().getArray()
         .filter(layer => layer.get('name') === 'weather')
         .forEach(layer => map.removeLayer(layer));
 
-    // Add the new weather layer
+    // Add new weather layer
     weatherLayer.set('name', 'weather');
     map.addLayer(weatherLayer);
 
-    // Center map on selected location
+    // Center map with animation
     map.getView().animate({
         center: position,
         duration: 1000

@@ -4,5 +4,12 @@ const CONFIG = {
     GEO_URL: 'https://api.openweathermap.org/geo/1.0',
     ICON_URL: 'https://openweathermap.org/img/wn',
     MAP_URL: 'https://tile.openweathermap.org/map',
-    UNITS: 'imperial'
+    UNITS: 'imperial',
+    FETCH_OPTIONS: {
+        mode: 'cors',
+        credentials: 'same-origin',
+        headers: {
+            'Accept': 'application/json'
+        }
+    }
 };
