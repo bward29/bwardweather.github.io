@@ -1,14 +1,12 @@
 const CITIES = {
     searchCities: async (searchText) => {
         try {
-            // Get coordinates and state info using geocoding API
             const geoResponse = await fetch(
-                `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(searchText)}&limit=10&appid=${CONFIG.API_KEY}`
+                `${CONFIG.GEO_URL}/direct?q=${encodeURIComponent(searchText)}&limit=10&appid=${CONFIG.API_KEY}`
             );
             if (!geoResponse.ok) throw new Error('Geo search failed');
             const geoData = await geoResponse.json();
 
-            // Get weather for each location
             const citiesWithWeather = await Promise.all(
                 geoData.map(async (location) => {
                     const weatherResponse = await fetch(
@@ -28,7 +26,6 @@ const CITIES = {
                 })
             );
 
-            // Filter out failed requests and format results
             return citiesWithWeather.filter(city => city !== null);
 
         } catch (error) {

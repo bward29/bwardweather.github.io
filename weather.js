@@ -134,7 +134,7 @@ async function getWeatherByCoords(lat, lon) {
         const [currentWeatherResponse, forecastResponse, geoResponse] = await Promise.all([
             fetch(`${CONFIG.BASE_URL}/weather?lat=${lat}&lon=${lon}&appid=${CONFIG.API_KEY}&units=${CONFIG.UNITS}`),
             fetch(`${CONFIG.BASE_URL}/forecast?lat=${lat}&lon=${lon}&appid=${CONFIG.API_KEY}&units=${CONFIG.UNITS}`),
-            fetch(`http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${CONFIG.API_KEY}`)
+            fetch(`${CONFIG.GEO_URL}/reverse?lat=${lat}&lon=${lon}&limit=1&appid=${CONFIG.API_KEY}`)
         ]);
 
         if (!currentWeatherResponse.ok || !forecastResponse.ok || !geoResponse.ok) {
@@ -171,7 +171,7 @@ async function getWeather() {
 
     try {
         const geoResponse = await fetch(
-            `http://api.openweathermap.org/geo/1.0/direct?q=${encodeURIComponent(cityInput)}&limit=1&appid=${CONFIG.API_KEY}`
+            `${CONFIG.GEO_URL}/direct?q=${encodeURIComponent(cityInput)}&limit=1&appid=${CONFIG.API_KEY}`
         );
 
         if (!geoResponse.ok) {
